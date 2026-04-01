@@ -6,6 +6,8 @@ const express  = require('express');
 const cors     = require('cors');
 const mysql    = require('mysql2/promise');
 const bcrypt   = require('bcryptjs');
+const fs       = require('fs');
+const path     = require('path');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -32,11 +34,28 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME     || 'jamroom_db',
   waitForConnections: true,
   connectionLimit: 10,
+  multipleStatements: true,
 });
 
-// Verify connection on startup
+// Verify connection and auto-run schema.sql if empty
 pool.getConnection()
-  .then(c => { console.log('✅ MySQL connected'); c.release(); })
+  .then(async c => {
+    console.log('✅ MySQL connected');
+    try {
+      const [rows] = await c.query("SHOW TABLES LIKE 'users'");
+      if (rows.length === 0) {
+        console.log('📦 Empty database detected. Running schema.sql...');
+        const schemaPath = path.join(__dirname, 'schema.sql');
+        const sql = fs.readFileSync(schemaPath, 'utf8');
+        await c.query(sql);
+        console.log('🎸 Database successfully initialized!');
+      }
+    } catch (e) {
+      console.error('❌ Failed to run schema:', e.message);
+    } finally {
+      c.release();
+    }
+  })
   .catch(e => console.error('❌ MySQL connection failed:', e.message));
 
 // ─── HEALTH ──────────────────────────────────────────────────

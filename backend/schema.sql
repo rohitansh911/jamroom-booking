@@ -1,13 +1,6 @@
 -- ============================================================
 --  JamRoom DB — Quick Setup Schema
---  Run: mysql -u root -p < schema.sql
 -- ============================================================
-
-CREATE DATABASE IF NOT EXISTS jamroom_db
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE jamroom_db;
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
