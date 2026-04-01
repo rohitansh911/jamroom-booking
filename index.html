@@ -478,9 +478,15 @@
 
 <script>
 // ============================================================
+// API CONFIG
+// ============================================================
+const API_BASE = 'https://jamroom-booking.up.railway.app';
+// For local dev, use: const API_BASE = 'http://localhost:3001';
+
+// ============================================================
 // CONFIG
 // ============================================================
-const ADMIN_PASSWORD = 'jamroom2025';
+const ADMIN_PASSWORD = 'jamroom2025'; // fallback if API is down
 
 // ============================================================
 // STATE
@@ -496,11 +502,56 @@ const state = {
   adminUnlocked: false,
 };
 
-// Live bookings: key = `${dateKey}_${slotId}`, value = booking object
-const bookings = {};
+// Cache from API
+let bookedSlotsMap = {};   // { slotId: { name, band, type } } for current selected date
+let allBookingsCache = [];  // full list for schedule/admin
+let nightPermCache  = [];   // for admin night perms
+let statsCache      = {};   // for admin dashboard
+let apiReachable    = null; // null=unknown, true/false
 
-// Night perm requests as live array
-const nightPermRequests = [];
+async function checkAPI() {
+  try {
+    const r = await fetch(`${API_BASE}/api/health`, { signal: AbortSignal.timeout(4000) });
+    apiReachable = r.ok;
+  } catch { apiReachable = false; }
+  return apiReachable;
+}
+
+async function loadSlotStatus(date) {
+  if (!apiReachable) return;
+  try {
+    const r = await fetch(`${API_BASE}/api/bookings/slot-status?date=${date}`);
+    const j = await r.json();
+    if (j.success) bookedSlotsMap = j.data;
+  } catch(e) { console.warn('loadSlotStatus:', e.message); }
+}
+
+async function loadAllBookings() {
+  if (!apiReachable) return;
+  try {
+    const r = await fetch(`${API_BASE}/api/bookings`);
+    const j = await r.json();
+    if (j.success) allBookingsCache = j.data;
+  } catch(e) { console.warn('loadAllBookings:', e.message); }
+}
+
+async function loadNightPerms() {
+  if (!apiReachable) return;
+  try {
+    const r = await fetch(`${API_BASE}/api/night-perms`);
+    const j = await r.json();
+    if (j.success) nightPermCache = j.data;
+  } catch(e) { console.warn('loadNightPerms:', e.message); }
+}
+
+async function loadStats() {
+  if (!apiReachable) return;
+  try {
+    const r = await fetch(`${API_BASE}/api/stats`);
+    const j = await r.json();
+    if (j.success) statsCache = j.data;
+  } catch(e) { console.warn('loadStats:', e.message); }
+}
 
 // ============================================================
 // DATE / SLOT HELPERS
@@ -712,7 +763,7 @@ function renderBook() {
 
   <div class="slot-grid" id="slotGrid">
     ${slots.map(s => {
-      const booked = getBookedSlot(state.selectedDate, s.id);
+      const booked = bookedSlotsMap[s.id];
       const isSelected = state.selectedSlot === s.id;
       return `
       <div class="slot-card ${booked ? 'booked' : ''} ${isSelected ? 'selected' : ''}"
@@ -802,9 +853,9 @@ function renderBookingForm(slots) {
 // SCHEDULE PAGE
 // ============================================================
 function renderSchedule() {
-  const all = getAllBookings();
   const today = new Date();
-  const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
+  const todayKey = dateKey(today);
+  const todayItems = allBookingsCache.filter(b => b.booking_date === todayKey);
 
   return `
   <div class="section-header" style="margin-top:1rem;">
@@ -819,7 +870,7 @@ function renderSchedule() {
     <button class="tab" id="tab-week" onclick="scheduleTab(this,'week')">This Week</button>
   </div>
   <div id="schedule-body">
-    ${renderScheduleItems(all.filter(b => b.dateKey === dateKey(today)))}
+    ${renderScheduleItems(todayItems)}
   </div>
   `;
 }
@@ -829,11 +880,12 @@ function scheduleTab(el, tab) {
   el.classList.add('active');
   const today = new Date();
   const tomorrow = new Date(); tomorrow.setDate(today.getDate() + 1);
-  const all = getAllBookings();
+  const todayKey    = dateKey(today);
+  const tomorrowKey = dateKey(tomorrow);
   let items;
-  if (tab === 'today') items = all.filter(b => b.dateKey === dateKey(today));
-  else if (tab === 'tomorrow') items = all.filter(b => b.dateKey === dateKey(tomorrow));
-  else items = all;
+  if (tab === 'today')    items = allBookingsCache.filter(b => b.booking_date === todayKey);
+  else if (tab === 'tomorrow') items = allBookingsCache.filter(b => b.booking_date === tomorrowKey);
+  else items = allBookingsCache;
   document.getElementById('schedule-body').innerHTML = renderScheduleItems(items);
 }
 
@@ -854,8 +906,9 @@ function renderAdmin() {
     </div>`;
   }
 
-  const all = getAllBookings();
-  const pending = nightPermRequests.filter(r => r.status === 'pending');
+  const s = statsCache;
+  const pending = nightPermCache.filter(r => r.status === 'pending');
+  const approved = nightPermCache.filter(r => r.status === 'approved');
 
   return `
   <div class="section-header" style="margin-top:1rem;">
@@ -869,7 +922,7 @@ function renderAdmin() {
   <div class="admin-grid">
     <div class="stat-card">
       <div class="stat-label">Total Bookings</div>
-      <div class="stat-val yellow">${all.length}</div>
+      <div class="stat-val yellow">${allBookingsCache.length}</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Pending Night Perms</div>
@@ -877,11 +930,11 @@ function renderAdmin() {
     </div>
     <div class="stat-card">
       <div class="stat-label">Night Perms Approved</div>
-      <div class="stat-val green">${nightPermRequests.filter(r=>r.status==='approved').length}</div>
+      <div class="stat-val green">${approved.length}</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Slots Available Today</div>
-      <div class="stat-val yellow">${WEEKDAY_SLOTS.length - all.filter(b => b.dateKey === dateKey(new Date())).length}</div>
+      <div class="stat-val yellow">${s.available_today ?? '—'}</div>
     </div>
   </div>
 
@@ -897,19 +950,19 @@ function renderAdmin() {
 }
 
 function renderAdminBookings() {
-  const all = getAllBookings();
+  const all = allBookingsCache;
   if (!all.length) {
     return `<div class="empty-state"><span class="icon">📋</span><p>No bookings yet.</p></div>`;
   }
   const rows = all.map((b, idx) => `
     <tr id="admin-row-${idx}">
-      <td>${b.dateLabel || b.dateKey}<br><span style="color:var(--muted);font-size:.75rem;">${b.slot}</span></td>
+      <td>${b.booking_date}<br><span style="color:var(--muted);font-size:.75rem;">${b.slot_label || b.slot}</span></td>
       <td><div style="font-weight:600">${b.name}</div><div style="font-size:.75rem;color:var(--muted)">${b.band || '—'}</div></td>
       <td>${b.purpose || '—'}</td>
       <td>${b.type==='priority'?'<span class="badge badge-priority">Priority</span>':'<span class="badge badge-confirmed">Regular</span>'}</td>
       <td style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="action-btn priority-btn" onclick="togglePriority(${idx})">⚡ Toggle Priority</button>
-        <button class="action-btn reject" onclick="cancelBooking(${idx})">✕ Cancel</button>
+        <button class="action-btn priority-btn" onclick="togglePriority(${b.booking_id})">⚡ Toggle Priority</button>
+        <button class="action-btn reject" onclick="cancelBooking(${b.booking_id})">✕ Cancel</button>
       </td>
     </tr>
   `).join('');
@@ -925,21 +978,21 @@ function renderAdminBookings() {
 }
 
 function renderAdminNightPerms() {
-  const pending = nightPermRequests.filter(r => r.status === 'pending');
+  const pending = nightPermCache.filter(r => r.status === 'pending');
   if (!pending.length) {
     return `<div class="empty-state"><span class="icon">🌙</span><p>No pending night perm requests.</p></div>`;
   }
-  return pending.map((p, i) => `
-  <div class="rule-card" id="np-card-${i}" style="margin-bottom:10px;">
+  return pending.map((p) => `
+  <div class="rule-card" id="np-card-${p.perm_id}" style="margin-bottom:10px;">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
       <div>
         <div style="font-weight:600;font-size:.95rem;">${p.user} <span style="color:var(--muted);font-weight:400">· ${p.band || '—'}</span></div>
-        <div style="font-size:.8rem;color:var(--muted);margin-top:4px;">${p.dateLabel} · ${p.slot} → Till ${p.till}</div>
+        <div style="font-size:.8rem;color:var(--muted);margin-top:4px;">${p.date_label} · ${p.slot} → Till ${p.till}</div>
         <div style="font-size:.85rem;margin-top:8px;">"${p.reason}"</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;">
-        <button class="action-btn approve" id="np-approve-${i}" onclick="approveNightPerm(${i})">✓ Approve</button>
-        <button class="action-btn reject" id="np-reject-${i}" onclick="rejectNightPerm(${i})">✕ Reject</button>
+        <button class="action-btn approve" onclick="approveNightPerm(${p.perm_id})">✓ Approve</button>
+        <button class="action-btn reject" onclick="rejectNightPerm(${p.perm_id})">✕ Reject</button>
       </div>
     </div>
   </div>
@@ -950,8 +1003,12 @@ function adminTab(el, tab) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   const body = document.getElementById('admin-body');
-  if (tab === 'bookings')   body.innerHTML = renderAdminBookings();
-  if (tab === 'nightperms') body.innerHTML = renderAdminNightPerms();
+  if (tab === 'bookings') {
+    loadAllBookings().then(() => { body.innerHTML = renderAdminBookings(); });
+  }
+  if (tab === 'nightperms') {
+    loadNightPerms().then(() => { body.innerHTML = renderAdminNightPerms(); });
+  }
 }
 
 // ============================================================
@@ -970,7 +1027,10 @@ function selectDate(i) {
   state.selectedDate = dates[i];
   state.selectedSlot = null;
   state.weekendMode = null;
-  render();
+  // Reload slot status for the new date from API
+  const dKey = dateKey(state.selectedDate);
+  bookedSlotsMap = {};
+  loadSlotStatus(dKey).then(() => render());
 }
 
 function selectSlot(id) {
@@ -1006,9 +1066,9 @@ function cancelBookingForm() {
   render();
 }
 
-function submitBooking() {
-  const name = document.getElementById('f-name')?.value?.trim();
-  const band = document.getElementById('f-band')?.value?.trim();
+async function submitBooking() {
+  const name    = document.getElementById('f-name')?.value?.trim();
+  const band    = document.getElementById('f-band')?.value?.trim();
   const members = document.getElementById('f-members')?.value;
   const purpose = document.getElementById('f-purpose')?.value?.trim();
   let reason = '';
@@ -1019,50 +1079,42 @@ function submitBooking() {
     if (!reason) { toast('Please provide a reason for night perm.', 'error'); return; }
   }
 
-  const dates = getBookableDates();
   const slots = getSlotsForDate(state.selectedDate, state.weekendMode);
-  const slot = slots.find(s => s.id === state.selectedSlot);
+  const slot  = slots.find(s => s.id === state.selectedSlot);
   if (!slot) { toast('No slot selected.', 'error'); return; }
 
-  // Check already booked
-  if (getBookedSlot(state.selectedDate, state.selectedSlot)) {
-    toast('This slot is already booked!', 'error'); return;
-  }
+  const dKey   = dateKey(state.selectedDate);
+  const dLabel = state.selectedDate.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short' });
 
-  const dKey = dateKey(state.selectedDate);
-  const dLabel = state.selectedDate.toLocaleDateString('en-IN',{weekday:'short', day:'numeric', month:'short'});
+  // Optimistically mark as booked in local map
+  bookedSlotsMap[slot.id] = { name, band, type: 'regular' };
 
-  const booking = {
-    key: getBookingKey(state.selectedDate, state.selectedSlot),
-    dateKey: dKey,
-    dateLabel: dLabel,
-    slot: slot.label,
-    slotId: slot.id,
-    name,
-    band,
-    members,
-    purpose,
-    type: 'regular',
-    nightPerm: state.nightPerm,
-    cancelled: false,
+  const body = {
+    name, band, members, purpose,
+    slot_id:      slot.id,
+    booking_date: dKey,
+    night_perm:   state.nightPerm,
+    night_perm_end: state.nightPermEnd,
+    night_reason: reason,
   };
-  bookings[booking.key] = booking;
 
-  // If night perm requested, add to requests
-  if (state.nightPerm) {
-    const till = state.nightPermEnd === '02:00' ? '2:00 AM' : '1:00 AM';
-    nightPermRequests.push({
-      user: name,
-      band,
-      dateLabel: dLabel,
-      slot: slot.label,
-      till,
-      reason,
-      status: 'pending',
-      bookingKey: booking.key,
-    });
+  if (apiReachable) {
+    try {
+      const btn = document.querySelector('.booking-panel .btn-primary');
+      if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+      const r = await fetch(`${API_BASE}/api/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const j = await r.json();
+      if (!j.success) { toast(j.error || 'Booking failed', 'error'); return; }
+    } catch(e) {
+      toast('Could not reach server — saved locally only.', 'error');
+    }
   }
 
+  const booking = { name, band, slot: slot.label, dateLabel: dLabel, purpose, nightPerm: state.nightPerm };
   showConfirmModal(booking);
 }
 
@@ -1123,40 +1175,60 @@ function adminLogout() {
   toast('Logged out of admin panel.', 'success');
 }
 
-function togglePriority(idx) {
-  const all = getAllBookings();
-  const booking = all[idx];
-  if (!booking) return;
-  booking.type = booking.type === 'priority' ? 'regular' : 'priority';
-  toast(`Priority ${booking.type === 'priority' ? 'enabled' : 'removed'} for ${booking.name}.`, 'success');
+async function togglePriority(bookingId) {
+  if (apiReachable) {
+    try {
+      const r = await fetch(`${API_BASE}/api/bookings/${bookingId}/priority`, { method: 'PATCH' });
+      const j = await r.json();
+      if (j.success) toast(`Priority toggled to ${j.type}.`, 'success');
+      else toast(j.error || 'Failed', 'error');
+    } catch { toast('Server error', 'error'); }
+  } else {
+    toast('No API connection', 'error');
+  }
+  await loadAllBookings();
   document.getElementById('admin-body').innerHTML = renderAdminBookings();
 }
 
-function cancelBooking(idx) {
-  const all = getAllBookings();
-  const booking = all[idx];
-  if (!booking) return;
-  booking.cancelled = true;
-  delete bookings[booking.key];
-  toast(`Booking cancelled for ${booking.name}.`, 'error');
+async function cancelBooking(bookingId) {
+  if (!confirm('Cancel this booking?')) return;
+  if (apiReachable) {
+    try {
+      const r = await fetch(`${API_BASE}/api/bookings/${bookingId}/cancel`, { method: 'PATCH' });
+      const j = await r.json();
+      if (j.success) toast('Booking cancelled.', 'error');
+      else toast(j.error || 'Failed', 'error');
+    } catch { toast('Server error', 'error'); }
+  }
+  await loadAllBookings();
   document.getElementById('admin-body').innerHTML = renderAdminBookings();
 }
 
-function approveNightPerm(i) {
-  const pending = nightPermRequests.filter(r => r.status === 'pending');
-  const req = pending[i];
-  if (!req) return;
-  req.status = 'approved';
+async function approveNightPerm(permId) {
+  if (apiReachable) {
+    try {
+      await fetch(`${API_BASE}/api/night-perms/${permId}`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ status: 'approved' }),
+      });
+    } catch { toast('Server error', 'error'); return; }
+  }
   toast('Night permission approved! 🌙', 'success');
+  await loadNightPerms();
   document.getElementById('admin-body').innerHTML = renderAdminNightPerms();
 }
 
-function rejectNightPerm(i) {
-  const pending = nightPermRequests.filter(r => r.status === 'pending');
-  const req = pending[i];
-  if (!req) return;
-  req.status = 'rejected';
+async function rejectNightPerm(permId) {
+  if (apiReachable) {
+    try {
+      await fetch(`${API_BASE}/api/night-perms/${permId}`, {
+        method: 'PATCH', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ status: 'rejected' }),
+      });
+    } catch { toast('Server error', 'error'); return; }
+  }
   toast('Night permission rejected.', 'error');
+  await loadNightPerms();
   document.getElementById('admin-body').innerHTML = renderAdminNightPerms();
 }
 
@@ -1188,7 +1260,24 @@ function toast(msg, type='success') {
 // ============================================================
 // INIT
 // ============================================================
-render();
+async function init() {
+  await checkAPI();
+  if (apiReachable) {
+    const dates = getBookableDates();
+    state.selectedDate = dates[0];
+    await Promise.all([
+      loadSlotStatus(dateKey(state.selectedDate)),
+      loadAllBookings(),
+      loadNightPerms(),
+      loadStats(),
+    ]);
+  } else {
+    console.warn('API not reachable — running in offline/local mode');
+  }
+  render();
+}
+
+init();
 </script>
 </body>
 </html>
