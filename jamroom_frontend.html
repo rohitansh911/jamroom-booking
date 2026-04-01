@@ -628,7 +628,7 @@ function getBookedSlot(date, slotId) {
 
 // Get all bookings as a flat array for schedule/admin views
 function getAllBookings() {
-  return Object.values(bookings).filter(b => !b.cancelled);
+  return allBookingsCache || [];
 }
 
 // ============================================================
@@ -654,7 +654,8 @@ function render() {
 // ============================================================
 function renderHome() {
   const all = getAllBookings();
-  const todayItems = all.filter(b => b.dateLabel === 'Today');
+  const todayKey = dateKey(new Date());
+  const todayItems = all.filter(b => b.booking_date && b.booking_date.startsWith(todayKey));
   return `
   <div class="hero">
     <div class="hero-tag">🎸 Music Club Booking System</div>
