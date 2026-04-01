@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JamRoom — Music Club Booking</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:         #0a0a0f;
+    --bg2:        #111118;
+    --bg3:        #1a1a24;
+    --card:       #16161f;
+    --border:     #2a2a3a;
+    --accent:     #e8ff47;
+    --accent2:    #ff6b35;
+    --text:       #f0f0f8;
+    --muted:      #6b6b85;
+    --success:    #4ade80;
+    --warning:    #fbbf24;
+    --danger:     #f87171;
+    --radius:     12px;
+    --font-head:  'Bebas Neue', sans-serif;
+    --font-body:  'DM Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(10,10,15,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 1.25rem;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .nav-logo {
+    font-family: var(--font-head);
+    font-size: 1.6rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+  .nav-logo span { color: var(--text); }
+  .nav-links { display: flex; gap: 4px; }
+  .nav-btn {
+    background: none; border: none;
+    color: var(--muted); font-family: var(--font-body);
+    font-size: 0.82rem; font-weight: 500;
+    padding: 6px 12px; border-radius: 8px;
+    cursor: pointer; transition: all .2s;
+    letter-spacing: 0.5px;
+  }
+  .nav-btn:hover { color: var(--text); background: var(--bg3); }
+  .nav-btn.active { color: var(--accent); background: rgba(232,255,71,0.08); }
+  .nav-btn.book-cta {
+    background: var(--accent); color: #0a0a0f;
+    font-weight: 700; margin-left: 8px;
+  }
+  .nav-btn.book-cta:hover { background: #d4e83f; }
+
+  /* HAMBURGER */
+  .hamburger {
+    display: none; flex-direction: column; gap: 5px;
+    background: none; border: none; cursor: pointer; padding: 4px;
+  }
+  .hamburger span {
+    display: block; width: 22px; height: 2px;
+    background: var(--text); border-radius: 2px; transition: .3s;
+  }
+
+  /* MAIN */
+  main { max-width: 900px; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+
+  /* HERO */
+  .hero {
+    text-align: center; padding: 3rem 0 2.5rem;
+    position: relative;
+  }
+  .hero-tag {
+    display: inline-block;
+    background: rgba(232,255,71,0.1);
+    border: 1px solid rgba(232,255,71,0.25);
+    color: var(--accent);
+    font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 2px; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 100px; margin-bottom: 1.2rem;
+  }
+  .hero h1 {
+    font-family: var(--font-head);
+    font-size: clamp(2.8rem, 10vw, 5.5rem);
+    line-height: 0.95; letter-spacing: 2px;
+    margin-bottom: 1rem;
+  }
+  .hero h1 .accent { color: var(--accent); }
+  .hero p { color: var(--muted); font-size: 1rem; max-width: 420px; margin: 0 auto 2rem; line-height: 1.6; }
+  .hero-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--accent); color: #0a0a0f;
+    font-family: var(--font-body); font-weight: 700;
+    font-size: 0.92rem; padding: 12px 28px;
+    border: none; border-radius: var(--radius);
+    cursor: pointer; transition: all .2s; letter-spacing: 0.3px;
+  }
+  .btn-primary:hover { background: #d4e83f; transform: translateY(-1px); }
+  .btn-secondary {
+    background: none;
+    border: 1px solid var(--border); color: var(--text);
+    font-family: var(--font-body); font-weight: 500;
+    font-size: 0.92rem; padding: 12px 28px;
+    border-radius: var(--radius); cursor: pointer; transition: all .2s;
+  }
+  .btn-secondary:hover { border-color: var(--muted); background: var(--bg3); }
+
+  /* RULE CARDS */
+  .rules-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px; margin: 2.5rem 0;
+  }
+  .rule-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+  }
+  .rule-card .icon {
+    font-size: 1.5rem; margin-bottom: 10px; display: block;
+  }
+  .rule-card h3 {
+    font-size: 0.78rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .rule-card p { font-size: 0.9rem; line-height: 1.5; color: var(--text); }
+  .rule-card .tag {
+    display: inline-block; margin-top: 10px;
+    font-size: 0.72rem; font-weight: 600;
+    padding: 3px 10px; border-radius: 100px;
+  }
+  .tag-weekday { background: rgba(251,191,36,0.15); color: var(--warning); }
+  .tag-weekend { background: rgba(74,222,128,0.12); color: var(--success); }
+  .tag-night { background: rgba(255,107,53,0.15); color: var(--accent2); }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+  .section-title {
+    font-family: var(--font-head);
+    font-size: 1.8rem; letter-spacing: 1px;
+  }
+  .section-sub { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+
+  /* DATE STRIP */
+  .date-strip {
+    display: flex; gap: 8px;
+    overflow-x: auto; padding-bottom: 8px; margin-bottom: 1.5rem;
+    scrollbar-width: none;
+  }
+  .date-strip::-webkit-scrollbar { display: none; }
+  .date-chip {
+    flex-shrink: 0;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px 14px;
+    cursor: pointer; transition: all .2s; text-align: center;
+  }
+  .date-chip:hover { border-color: var(--muted); }
+  .date-chip.active {
+    border-color: var(--accent);
+    background: rgba(232,255,71,0.08);
+  }
+  .date-chip .day { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .date-chip .date { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+  .date-chip .month { font-size: 0.7rem; color: var(--muted); }
+  .date-chip.active .date { color: var(--accent); }
+  .date-chip.weekend-chip .day { color: var(--success); }
+
+  /* SLOT GRID */
+  .slot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px; margin-bottom: 2rem;
+  }
+  .slot-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem;
+    cursor: pointer; transition: all .2s; position: relative;
+  }
+  .slot-card:hover:not(.booked):not(.disabled) {
+    border-color: var(--accent);
+    background: rgba(232,255,71,0.04);
+    transform: translateY(-2px);
+  }
+  .slot-card.selected {
+    border-color: var(--accent);
+    background: rgba(232,255,71,0.08);
+  }
+  .slot-card.booked {
+    opacity: 0.45; cursor: not-allowed;
+    background: rgba(248,113,113,0.04);
+    border-color: rgba(248,113,113,0.2);
+  }
+  .slot-time {
+    font-size: 0.95rem; font-weight: 600; margin-bottom: 4px;
+  }
+  .slot-duration {
+    font-size: 0.75rem; color: var(--muted);
+  }
+  .slot-status {
+    display: inline-block; margin-top: 10px;
+    font-size: 0.7rem; font-weight: 600;
+    padding: 3px 10px; border-radius: 100px;
+    letter-spacing: 0.5px;
+  }
+  .status-open { background: rgba(74,222,128,0.12); color: var(--success); }
+  .status-booked { background: rgba(248,113,113,0.12); color: var(--danger); }
+  .status-priority { background: rgba(251,191,36,0.12); color: var(--warning); }
+  .slot-booker {
+    font-size: 0.72rem; color: var(--muted); margin-top: 4px;
+  }
+
+  /* BOOKING PANEL */
+  .booking-panel {
+    background: var(--card); border: 1px solid var(--accent);
+    border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem;
+    animation: slideIn .3s ease;
+  }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+  .booking-panel h3 {
+    font-family: var(--font-head); font-size: 1.4rem;
+    letter-spacing: 1px; margin-bottom: 1.2rem;
+    color: var(--accent);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .form-group input, .form-group select, .form-group textarea {
+    background: var(--bg2); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-body);
+    font-size: 0.9rem; padding: 10px 14px;
+    border-radius: 8px; outline: none; transition: border .2s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--accent);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-group select option { background: var(--bg2); }
+  .night-perm-toggle {
+    display: flex; align-items: center; gap: 10px;
+    margin: 12px 0; padding: 12px 14px;
+    background: rgba(255,107,53,0.06); border: 1px solid rgba(255,107,53,0.2);
+    border-radius: 8px; cursor: pointer;
+  }
+  .night-perm-toggle input[type=checkbox] { accent-color: var(--accent2); width: 16px; height: 16px; }
+  .night-perm-toggle label { font-size: 0.88rem; cursor: pointer; }
+  .night-perm-toggle span { font-size: 0.78rem; color: var(--accent2); font-weight: 600; }
+  .night-perm-extra { margin-top: 10px; }
+  .form-btns { display: flex; gap: 10px; margin-top: 1.25rem; }
+
+  /* TODAY SCHEDULE */
+  .schedule-list { display: flex; flex-direction: column; gap: 8px; }
+  .schedule-item {
+    display: flex; align-items: center; gap: 14px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1rem 1.25rem;
+  }
+  .schedule-time {
+    font-size: 0.78rem; font-weight: 700;
+    color: var(--accent); min-width: 100px;
+    font-variant-numeric: tabular-nums;
+  }
+  .schedule-who { flex: 1; }
+  .schedule-name { font-size: 0.92rem; font-weight: 600; }
+  .schedule-band { font-size: 0.78rem; color: var(--muted); }
+  .schedule-purpose { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .badge {
+    font-size: 0.68rem; font-weight: 700;
+    padding: 3px 10px; border-radius: 100px;
+    letter-spacing: 0.5px; white-space: nowrap;
+  }
+  .badge-priority { background: rgba(251,191,36,0.15); color: var(--warning); }
+  .badge-night   { background: rgba(255,107,53,0.15); color: var(--accent2); }
+  .badge-confirmed { background: rgba(74,222,128,0.12); color: var(--success); }
+
+  /* ADMIN PANEL */
+  .admin-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px; margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.25rem;
+  }
+  .stat-card .stat-label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .stat-card .stat-val { font-family: var(--font-head); font-size: 2.2rem; letter-spacing: 1px; }
+  .stat-card .stat-val.yellow { color: var(--accent); }
+  .stat-card .stat-val.green  { color: var(--success); }
+  .stat-card .stat-val.orange { color: var(--accent2); }
+
+  /* TABLE */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    font-size: 0.72rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--muted);
+    padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .data-table td {
+    padding: 12px 14px; font-size: 0.88rem;
+    border-bottom: 1px solid rgba(42,42,58,0.5);
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* ACTION BTNS */
+  .action-btn {
+    font-size: 0.75rem; font-weight: 600; padding: 5px 12px;
+    border-radius: 6px; border: 1px solid; cursor: pointer;
+    font-family: var(--font-body); transition: .2s;
+  }
+  .action-btn.approve {
+    border-color: var(--success); color: var(--success); background: transparent;
+  }
+  .action-btn.approve:hover { background: rgba(74,222,128,0.1); }
+  .action-btn.reject {
+    border-color: var(--danger); color: var(--danger); background: transparent;
+  }
+  .action-btn.reject:hover { background: rgba(248,113,113,0.1); }
+  .action-btn.priority-btn {
+    border-color: var(--warning); color: var(--warning); background: transparent;
+  }
+  .action-btn.priority-btn:hover { background: rgba(251,191,36,0.1); }
+
+  /* TOAST */
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--text); padding: 12px 24px; border-radius: 10px;
+    font-size: 0.88rem; font-weight: 500; z-index: 999;
+    animation: toastIn .3s ease; max-width: 90vw; text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .toast.success { border-color: var(--success); }
+  .toast.error   { border-color: var(--danger); }
+  @keyframes toastIn { from { opacity:0; transform:translate(-50%,20px); } to { opacity:1; transform:translate(-50%,0); } }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; padding: 1rem;
+    backdrop-filter: blur(4px);
+  }
+  .modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 2rem; max-width: 460px; width: 100%;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal h2 { font-family: var(--font-head); font-size: 1.8rem; margin-bottom: 1.5rem; }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    background: none; border: none; color: var(--muted);
+    font-size: 1.2rem; cursor: pointer;
+  }
+  .divider {
+    height: 1px; background: var(--border); margin: 1.5rem 0;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center; padding: 3rem 1rem;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 2.5rem; display: block; margin-bottom: 1rem; }
+  .empty-state p { font-size: 0.9rem; }
+
+  /* MOBILE */
+  @media (max-width: 640px) {
+    .nav-links { display: none; }
+    .nav-links.open {
+      display: flex; flex-direction: column; position: absolute;
+      top: 60px; left: 0; right: 0;
+      background: var(--bg); border-bottom: 1px solid var(--border);
+      padding: 1rem;
+    }
+    .hamburger { display: flex; }
+    .form-row { grid-template-columns: 1fr; }
+    .schedule-item { flex-wrap: wrap; gap: 8px; }
+    .schedule-time { min-width: auto; }
+    .data-table { font-size: 0.8rem; }
+    .data-table th, .data-table td { padding: 8px 10px; }
+  }
+
+  /* TABS */
+  .tab-bar {
+    display: flex; gap: 4px; margin-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border); padding-bottom: 0;
+  }
+  .tab {
+    background: none; border: none; cursor: pointer;
+    font-family: var(--font-body); font-size: 0.88rem;
+    font-weight: 500; color: var(--muted);
+    padding: 10px 16px; border-bottom: 2px solid transparent;
+    transition: .2s; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* CONFIRM MODAL */
+  .confirm-slot-info {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1rem; margin: 1rem 0;
+  }
+  .confirm-slot-info .ci-row {
+    display: flex; justify-content: space-between;
+    font-size: 0.88rem; padding: 5px 0;
+    border-bottom: 1px solid rgba(42,42,58,0.5);
+  }
+  .confirm-slot-info .ci-row:last-child { border-bottom: none; }
+  .confirm-slot-info .ci-label { color: var(--muted); }
+  .confirm-slot-info .ci-val { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<nav id="navbar">
+  <div class="nav-logo">JAM<span>ROOM</span></div>
+  <div class="nav-links" id="navLinks">
+    <button class="nav-btn active" onclick="showPage('home')">Home</button>
+    <button class="nav-btn" onclick="showPage('book')">Book Slot</button>
+    <button class="nav-btn" onclick="showPage('schedule')">Schedule</button>
+    <button class="nav-btn" onclick="showPage('admin')">Admin</button>
+    <button class="nav-btn book-cta" onclick="showPage('book')">+ Book Now</button>
+  </div>
+  <button class="hamburger" id="hamburger" onclick="toggleMenu()">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<main id="main"></main>
+
+<div id="toast-container"></div>
+<div id="modal-container"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  page: 'home',
+  selectedDate: null,
+  selectedSlot: null,
+  nightPerm: false,
+  nightPermEnd: '01:00',
+  menuOpen: false,
+};
+
+// Generate next 7 days (starting tomorrow = booking rule)
+function getBookableDates() {
+  const dates = [];
+  const today = new Date();
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    dates.push(d);
+  }
+  return dates;
+}
+
+function isWeekend(date) {
+  const d = date.getDay(); // 0=Sun, 6=Sat
+  return d === 0 || d === 6;
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString('en-IN', { weekday:'short', day:'2-digit', month:'short' });
+}
+
+// Slots data
+const WEEKDAY_SLOTS = [
+  { id:1, label:'5:00 PM – 6:00 PM', start:'17:00', duration:'1 hr' },
+  { id:2, label:'6:00 PM – 7:00 PM', start:'18:00', duration:'1 hr' },
+  { id:3, label:'7:00 PM – 8:00 PM', start:'19:00', duration:'1 hr' },
+  { id:4, label:'8:00 PM – 9:00 PM', start:'20:00', duration:'1 hr' },
+  { id:5, label:'9:00 PM – 10:00 PM',start:'21:00', duration:'1 hr' },
+];
+
+const WEEKEND_SLOTS_2HR = [
+  { id:6,  label:'9:00 AM – 11:00 AM',  start:'09:00', duration:'2 hr' },
+  { id:7,  label:'11:00 AM – 1:00 PM',  start:'11:00', duration:'2 hr' },
+  { id:8,  label:'1:00 PM – 3:00 PM',   start:'13:00', duration:'2 hr' },
+  { id:9,  label:'3:00 PM – 5:00 PM',   start:'15:00', duration:'2 hr' },
+  { id:10, label:'5:00 PM – 7:00 PM',   start:'17:00', duration:'2 hr' },
+  { id:11, label:'7:00 PM – 9:00 PM',   start:'19:00', duration:'2 hr' },
+  { id:12, label:'9:00 PM – 10:00 PM',  start:'21:00', duration:'1 hr' },
+];
+
+const WEEKEND_SLOTS_1HR = [
+  { id:13, label:'9:00 AM – 10:00 AM',  start:'09:00', duration:'1 hr' },
+  { id:14, label:'10:00 AM – 11:00 AM', start:'10:00', duration:'1 hr' },
+  { id:15, label:'11:00 AM – 12:00 PM', start:'11:00', duration:'1 hr' },
+  { id:16, label:'12:00 PM – 1:00 PM',  start:'12:00', duration:'1 hr' },
+  { id:17, label:'1:00 PM – 2:00 PM',   start:'13:00', duration:'1 hr' },
+  { id:18, label:'2:00 PM – 3:00 PM',   start:'14:00', duration:'1 hr' },
+  { id:19, label:'3:00 PM – 4:00 PM',   start:'15:00', duration:'1 hr' },
+  { id:20, label:'4:00 PM – 5:00 PM',   start:'16:00', duration:'1 hr' },
+  { id:21, label:'5:00 PM – 6:00 PM',   start:'17:00', duration:'1 hr' },
+  { id:22, label:'6:00 PM – 7:00 PM',   start:'18:00', duration:'1 hr' },
+  { id:23, label:'7:00 PM – 8:00 PM',   start:'19:00', duration:'1 hr' },
+  { id:24, label:'8:00 PM – 9:00 PM',   start:'20:00', duration:'1 hr' },
+  { id:25, label:'9:00 PM – 10:00 PM',  start:'21:00', duration:'1 hr' },
+];
+
+// Mock booked slots (simulating DB data)
+const BOOKED = {
+  // slotId: { user: 'Name', band: 'Band', type: 'regular'|'priority', nightPerm: bool }
+  1: { user: 'Arjun Mehta',  band: 'The Riffs',    type: 'regular',  nightPerm: false },
+  3: { user: 'Priya Sharma', band: 'Echo Chamber', type: 'regular',  nightPerm: true  },
+  5: { user: 'Rohan Das',    band: 'Stray Cats',   type: 'priority', nightPerm: false },
+  8: { user: 'Sneha Kapoor', band: 'The Riffs',    type: 'regular',  nightPerm: false },
+};
+
+// Mock schedule for today/tomorrow
+const SCHEDULE = [
+  { time:'5:00 PM – 6:00 PM', name:'Arjun Mehta',  band:'The Riffs',    purpose:'Regular practice', type:'regular', nightPerm: false },
+  { time:'7:00 PM – 8:00 PM', name:'Priya Sharma', band:'Echo Chamber', purpose:'Setlist rehearsal', type:'regular', nightPerm: true  },
+  { time:'9:00 PM – 10:00 PM',name:'Rohan Das',    band:'Stray Cats',   purpose:'Battle of Bands prep', type:'priority', nightPerm: false },
+];
+
+const NIGHT_PERMS = [
+  { user:'Priya Sharma', band:'Echo Chamber', date:'Tomorrow', slot:'7:00 PM – 8:00 PM', till:'1:00 AM', reason:'Original composition recording for Battle of Bands submission. Desperately need 2 extra hours!', status:'pending' },
+];
+
+// ============================================================
+// RENDER
+// ============================================================
+function render() {
+  const main = document.getElementById('main');
+  document.querySelectorAll('.nav-btn:not(.book-cta)').forEach(b => b.classList.remove('active'));
+
+  switch(state.page) {
+    case 'home':     main.innerHTML = renderHome();     break;
+    case 'book':     main.innerHTML = renderBook();     break;
+    case 'schedule': main.innerHTML = renderSchedule(); break;
+    case 'admin':    main.innerHTML = renderAdmin();    break;
+  }
+  attachListeners();
+}
+
+function renderHome() {
+  return `
+  <div class="hero">
+    <div class="hero-tag">🎸 Music Club Booking System</div>
+    <h1>BOOK YOUR<br><span class="accent">JAM SLOT</span><br>ONLINE</h1>
+    <p>No more WhatsApp chaos. Reserve the jam room in seconds, fair and transparent for every band.</p>
+    <div class="hero-btns">
+      <button class="btn-primary" onclick="showPage('book')">Book a Slot →</button>
+      <button class="btn-secondary" onclick="showPage('schedule')">View Schedule</button>
+    </div>
+  </div>
+
+  <div class="rules-grid">
+    <div class="rule-card">
+      <span class="icon">📅</span>
+      <h3>Weekdays</h3>
+      <p>Practice slots from <strong>5:00 PM to 10:00 PM</strong>. Each slot is 1 hour long.</p>
+      <span class="tag tag-weekday">Mon – Fri · 1 hr slots</span>
+    </div>
+    <div class="rule-card">
+      <span class="icon">🎵</span>
+      <h3>Weekends</h3>
+      <p>Slots from <strong>9:00 AM to 10:00 PM</strong>. Choose 1-hour or 2-hour sessions.</p>
+      <span class="tag tag-weekend">Sat – Sun · 1 hr or 2 hr</span>
+    </div>
+    <div class="rule-card">
+      <span class="icon">🌙</span>
+      <h3>Night Perm</h3>
+      <p>Need extra time past 10 PM? Apply for Night Permission — till <strong>1 AM or 2 AM</strong>. Admin approval required.</p>
+      <span class="tag tag-night">Requires Approval</span>
+    </div>
+    <div class="rule-card">
+      <span class="icon">⚡</span>
+      <h3>Fair Booking</h3>
+      <p>Slots open <strong>one day before</strong>. One booking per person per day. Events get priority access from admin.</p>
+      <span class="tag tag-weekday">1 Day Advance Only</span>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <div>
+      <div class="section-title">TODAY'S SCHEDULE</div>
+      <div class="section-sub">Live room status</div>
+    </div>
+    <button class="btn-secondary" style="font-size:.82rem;padding:8px 16px;" onclick="showPage('schedule')">See All →</button>
+  </div>
+  ${renderScheduleItems(SCHEDULE)}
+  `;
+}
+
+function renderScheduleItems(items) {
+  if (!items.length) return `<div class="empty-state"><span class="icon">🎸</span><p>No bookings yet. Room is all yours!</p></div>`;
+  return `<div class="schedule-list">` + items.map(s => `
+    <div class="schedule-item">
+      <div class="schedule-time">${s.time}</div>
+      <div class="schedule-who">
+        <div class="schedule-name">${s.name}</div>
+        <div class="schedule-band">${s.band}</div>
+        <div class="schedule-purpose">${s.purpose}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;">
+        ${s.type === 'priority' ? '<span class="badge badge-priority">⚡ Priority</span>' : '<span class="badge badge-confirmed">✓ Confirmed</span>'}
+        ${s.nightPerm ? '<span class="badge badge-night">🌙 Night Perm</span>' : ''}
+      </div>
+    </div>
+  `).join('') + `</div>`;
+}
+
+function renderBook() {
+  const dates = getBookableDates();
+  if (!state.selectedDate) state.selectedDate = dates[0];
+  const weekend = isWeekend(state.selectedDate);
+  const slots = weekend
+    ? (state.weekendMode === '1hr' ? WEEKEND_SLOTS_1HR : WEEKEND_SLOTS_2HR)
+    : WEEKDAY_SLOTS;
+
+  return `
+  <div class="section-header" style="margin-top:1rem;">
+    <div>
+      <div class="section-title">BOOK A SLOT</div>
+      <div class="section-sub">Slots open 1 day in advance · ${weekend ? 'Weekend: 1hr or 2hr options' : 'Weekday: 1hr slots'}</div>
+    </div>
+  </div>
+
+  <div class="date-strip" id="dateStrip">
+    ${dates.map((d,i) => `
+      <div class="date-chip ${isWeekend(d)?'weekend-chip':''} ${state.selectedDate===d?'active':''}" onclick="selectDate(${i})">
+        <div class="day">${d.toLocaleDateString('en-IN',{weekday:'short'})}</div>
+        <div class="date">${d.getDate()}</div>
+        <div class="month">${d.toLocaleDateString('en-IN',{month:'short'})}</div>
+      </div>
+    `).join('')}
+  </div>
+
+  ${weekend ? `
+  <div style="display:flex;gap:8px;margin-bottom:1.25rem;">
+    <button class="action-btn ${state.weekendMode!=='1hr'?'approve':''}" onclick="setWeekendMode('2hr')" style="padding:8px 18px;font-size:.82rem;">2-Hour Session</button>
+    <button class="action-btn ${state.weekendMode==='1hr'?'approve':''}" onclick="setWeekendMode('1hr')" style="padding:8px 18px;font-size:.82rem;">1-Hour Session</button>
+  </div>` : ''}
+
+  <div class="slot-grid" id="slotGrid">
+    ${slots.map(s => {
+      const booked = BOOKED[s.id];
+      return `
+      <div class="slot-card ${booked?'booked':''} ${state.selectedSlot===s.id?'selected':''}"
+           onclick="${booked?'':''}" id="slot-${s.id}"
+           ${booked ? '' : `onclick="selectSlot(${s.id})"`}>
+        <div class="slot-time">${s.label}</div>
+        <div class="slot-duration">${s.duration}</div>
+        ${booked ? `
+          <span class="slot-status ${booked.type==='priority'?'status-priority':'status-booked'}">
+            ${booked.type==='priority'?'⚡ Priority':'Booked'}
+          </span>
+          <div class="slot-booker">${booked.band}</div>
+        ` : `<span class="slot-status status-open">Available</span>`}
+      </div>`;
+    }).join('')}
+  </div>
+
+  ${state.selectedSlot ? renderBookingForm(slots) : ''}
+  `;
+}
+
+function renderBookingForm(slots) {
+  const slot = slots.find(s => s.id === state.selectedSlot);
+  if (!slot) return '';
+  return `
+  <div class="booking-panel">
+    <h3>CONFIRM YOUR BOOKING</h3>
+    <div class="confirm-slot-info">
+      <div class="ci-row"><span class="ci-label">Slot</span><span class="ci-val">${slot.label}</span></div>
+      <div class="ci-row"><span class="ci-label">Duration</span><span class="ci-val">${slot.duration}</span></div>
+      <div class="ci-row"><span class="ci-label">Room</span><span class="ci-val">Main Jam Room</span></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Your Name</label>
+        <input type="text" id="f-name" placeholder="Vikram Nair" />
+      </div>
+      <div class="form-group">
+        <label>Band Name</label>
+        <input type="text" id="f-band" placeholder="Your Band (optional)" />
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Members Coming</label>
+        <select id="f-members">
+          ${[1,2,3,4,5,6,7,8].map(n=>`<option value="${n}">${n} member${n>1?'s':''}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Purpose</label>
+        <input type="text" id="f-purpose" placeholder="e.g. Battle of Bands prep" />
+      </div>
+    </div>
+
+    <div class="night-perm-toggle" onclick="toggleNightPerm()">
+      <input type="checkbox" id="nightPermCheck" ${state.nightPerm?'checked':''} onclick="event.stopPropagation();toggleNightPerm()"/>
+      <div>
+        <label for="nightPermCheck">Request Night Permission (past 10 PM)</label><br>
+        <span>Requires admin approval · Till 1 AM or 2 AM</span>
+      </div>
+    </div>
+
+    ${state.nightPerm ? `
+    <div class="night-perm-extra">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Extended Till</label>
+          <select id="f-nightend" onchange="state.nightPermEnd=this.value">
+            <option value="01:00">1:00 AM</option>
+            <option value="02:00">2:00 AM</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Reason (required)</label>
+          <input type="text" id="f-reason" placeholder="Why do you need extra time?" />
+        </div>
+      </div>
+    </div>` : ''}
+
+    <div class="form-btns">
+      <button class="btn-primary" onclick="submitBooking()">Confirm Booking →</button>
+      <button class="btn-secondary" onclick="state.selectedSlot=null;render()">Cancel</button>
+    </div>
+  </div>`;
+}
+
+function renderSchedule() {
+  return `
+  <div class="section-header" style="margin-top:1rem;">
+    <div>
+      <div class="section-title">ROOM SCHEDULE</div>
+      <div class="section-sub">All confirmed bookings</div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="tabSwitch(this,'today')">Today</button>
+    <button class="tab" onclick="tabSwitch(this,'tomorrow')">Tomorrow</button>
+    <button class="tab" onclick="tabSwitch(this,'week')">This Week</button>
+  </div>
+  <div id="schedule-body">
+    ${renderScheduleItems(SCHEDULE)}
+  </div>
+  `;
+}
+
+function renderAdmin() {
+  return `
+  <div class="section-header" style="margin-top:1rem;">
+    <div>
+      <div class="section-title">ADMIN PANEL</div>
+      <div class="section-sub">Manage bookings, night perms & events</div>
+    </div>
+  </div>
+
+  <div class="admin-grid">
+    <div class="stat-card">
+      <div class="stat-label">Today's Bookings</div>
+      <div class="stat-val yellow">3</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Available Slots</div>
+      <div class="stat-val green">2</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pending Night Perms</div>
+      <div class="stat-val orange">1</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Upcoming Events</div>
+      <div class="stat-val yellow">1</div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab active" onclick="adminTab(this,'bookings')">All Bookings</button>
+    <button class="tab" onclick="adminTab(this,'nightperms')">Night Perms</button>
+    <button class="tab" onclick="adminTab(this,'events')">Events</button>
+  </div>
+
+  <div id="admin-body">
+    ${renderAdminBookings()}
+  </div>
+  `;
+}
+
+function renderAdminBookings() {
+  const rows = SCHEDULE.map(s => `
+    <tr>
+      <td>${s.time}</td>
+      <td><div style="font-weight:600">${s.name}</div><div style="font-size:.75rem;color:var(--muted)">${s.band}</div></td>
+      <td>${s.purpose}</td>
+      <td>${s.type==='priority'?'<span class="badge badge-priority">Priority</span>':'<span class="badge badge-confirmed">Regular</span>'}</td>
+      <td>
+        <button class="action-btn priority-btn" onclick="toast('Priority status toggled!','success')">⚡ Toggle Priority</button>
+        <button class="action-btn reject" style="margin-left:4px;" onclick="toast('Booking cancelled.','error')">Cancel</button>
+      </td>
+    </tr>
+  `).join('');
+  return `
+  <div style="overflow-x:auto;">
+  <table class="data-table">
+    <thead><tr>
+      <th>Time Slot</th><th>Member</th><th>Purpose</th><th>Type</th><th>Actions</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+  </div>`;
+}
+
+function renderAdminNightPerms() {
+  return NIGHT_PERMS.map(p => `
+  <div class="rule-card" style="margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-weight:600;font-size:.95rem;">${p.name} <span style="color:var(--muted);font-weight:400">· ${p.band}</span></div>
+        <div style="font-size:.8rem;color:var(--muted);margin-top:4px;">${p.date} · ${p.slot} → Till ${p.till}</div>
+        <div style="font-size:.85rem;margin-top:8px;">"${p.reason}"</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button class="action-btn approve" onclick="approveNightPerm(this)">✓ Approve</button>
+        <button class="action-btn reject" onclick="rejectNightPerm(this)">✕ Reject</button>
+      </div>
+    </div>
+  </div>
+  `).join('') || `<div class="empty-state"><span class="icon">🌙</span><p>No pending night perm requests</p></div>`;
+}
+
+function renderAdminEvents() {
+  return `
+  <div class="rule-card" style="margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-weight:600;font-size:.95rem;">Battle of Bands 2025</div>
+        <div style="font-size:.8rem;color:var(--muted);margin-top:4px;">May 10, 2025 · External Event</div>
+        <div style="font-size:.85rem;margin-top:8px;">Annual college Battle of Bands. Top 6 bands compete.</div>
+      </div>
+      <span class="tag tag-night" style="align-self:flex-start;">Active</span>
+    </div>
+  </div>
+  <button class="btn-secondary" style="font-size:.82rem;padding:8px 18px;" onclick="toast('Event creation coming soon!','success')">+ Add Event</button>
+  `;
+}
+
+// ============================================================
+// INTERACTIONS
+// ============================================================
+function showPage(page) {
+  state.page = page;
+  state.selectedSlot = null;
+  render();
+  window.scrollTo({top:0,behavior:'smooth'});
+  closeMenu();
+}
+
+function selectDate(i) {
+  const dates = getBookableDates();
+  state.selectedDate = dates[i];
+  state.selectedSlot = null;
+  state.weekendMode = null;
+  render();
+}
+
+function selectSlot(id) {
+  state.selectedSlot = state.selectedSlot === id ? null : id;
+  render();
+  if (state.selectedSlot) {
+    setTimeout(() => {
+      const el = document.querySelector('.booking-panel');
+      if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 100);
+  }
+}
+
+function setWeekendMode(mode) {
+  state.weekendMode = mode;
+  state.selectedSlot = null;
+  render();
+}
+
+function toggleNightPerm() {
+  state.nightPerm = !state.nightPerm;
+  render();
+}
+
+function submitBooking() {
+  const name = document.getElementById('f-name')?.value?.trim();
+  const purpose = document.getElementById('f-purpose')?.value?.trim();
+  if (!name) { toast('Please enter your name.','error'); return; }
+  if (state.nightPerm) {
+    const reason = document.getElementById('f-reason')?.value?.trim();
+    if (!reason) { toast('Please provide a reason for night perm.','error'); return; }
+  }
+  showConfirmModal(name, purpose);
+}
+
+function showConfirmModal(name, purpose) {
+  const dates = getBookableDates();
+  const idx = dates.findIndex(d => d === state.selectedDate);
+  const dateStr = state.selectedDate.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+  const slots = isWeekend(state.selectedDate)
+    ? (state.weekendMode==='1hr'?WEEKEND_SLOTS_1HR:WEEKEND_SLOTS_2HR)
+    : WEEKDAY_SLOTS;
+  const slot = slots.find(s=>s.id===state.selectedSlot);
+
+  document.getElementById('modal-container').innerHTML = `
+  <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal">
+      <h2>BOOKING<br><span style="color:var(--accent)">CONFIRMED!</span></h2>
+      <div class="confirm-slot-info">
+        <div class="ci-row"><span class="ci-label">Name</span><span class="ci-val">${name}</span></div>
+        <div class="ci-row"><span class="ci-label">Date</span><span class="ci-val">${dateStr}</span></div>
+        <div class="ci-row"><span class="ci-label">Slot</span><span class="ci-val">${slot?.label}</span></div>
+        <div class="ci-row"><span class="ci-label">Room</span><span class="ci-val">Main Jam Room</span></div>
+        ${purpose?`<div class="ci-row"><span class="ci-label">Purpose</span><span class="ci-val">${purpose}</span></div>`:''}
+        ${state.nightPerm?`<div class="ci-row"><span class="ci-label">Night Perm</span><span class="ci-val" style="color:var(--warning)">Pending Approval</span></div>`:''}
+      </div>
+      <p style="font-size:.82rem;color:var(--muted);line-height:1.6;">
+        ${state.nightPerm ? '🌙 Your night permission request has been sent to admin for approval.' : '✅ Your slot is confirmed. See you in the jam room!'}
+      </p>
+      <div style="display:flex;gap:10px;margin-top:1.5rem;">
+        <button class="btn-primary" onclick="closeModal();showPage('schedule')">View Schedule →</button>
+        <button class="btn-secondary" onclick="closeModal()">Done</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function closeModal() {
+  document.getElementById('modal-container').innerHTML = '';
+  state.selectedSlot = null;
+  state.nightPerm = false;
+  render();
+}
+
+function tabSwitch(el, tab) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const msgs = {
+    today: SCHEDULE,
+    tomorrow: [...SCHEDULE].reverse(),
+    week: [...SCHEDULE, ...SCHEDULE.slice(0,1)]
+  };
+  document.getElementById('schedule-body').innerHTML = renderScheduleItems(msgs[tab]||SCHEDULE);
+}
+
+function adminTab(el, tab) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  const body = document.getElementById('admin-body');
+  if (tab==='bookings')  body.innerHTML = renderAdminBookings();
+  if (tab==='nightperms') body.innerHTML = renderAdminNightPerms();
+  if (tab==='events')    body.innerHTML = renderAdminEvents();
+}
+
+function approveNightPerm(btn) {
+  btn.closest('.rule-card').style.opacity = '0.5';
+  btn.textContent = '✓ Approved';
+  btn.disabled = true;
+  btn.nextElementSibling.disabled = true;
+  toast('Night permission approved! 🌙','success');
+}
+
+function rejectNightPerm(btn) {
+  btn.closest('.rule-card').style.opacity = '0.5';
+  btn.textContent = '✕ Rejected';
+  btn.disabled = true;
+  btn.previousElementSibling.disabled = true;
+  toast('Night permission rejected.','error');
+}
+
+function toggleMenu() {
+  state.menuOpen = !state.menuOpen;
+  document.getElementById('navLinks').classList.toggle('open', state.menuOpen);
+}
+
+function closeMenu() {
+  state.menuOpen = false;
+  document.getElementById('navLinks').classList.remove('open');
+}
+
+function toast(msg, type='success') {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3200);
+}
+
+function attachListeners() {}
+
+// Init
+render();
+</script>
+</body>
+</html>
