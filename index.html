@@ -856,7 +856,7 @@ function renderBookingForm(slots) {
 function renderSchedule() {
   const today = new Date();
   const todayKey = dateKey(today);
-  const todayItems = allBookingsCache.filter(b => b.booking_date === todayKey);
+  const todayItems = allBookingsCache.filter(b => b.booking_date && b.booking_date.startsWith(todayKey));
 
   return `
   <div class="section-header" style="margin-top:1rem;">
@@ -884,8 +884,8 @@ function scheduleTab(el, tab) {
   const todayKey    = dateKey(today);
   const tomorrowKey = dateKey(tomorrow);
   let items;
-  if (tab === 'today')    items = allBookingsCache.filter(b => b.booking_date === todayKey);
-  else if (tab === 'tomorrow') items = allBookingsCache.filter(b => b.booking_date === tomorrowKey);
+  if (tab === 'today')    items = allBookingsCache.filter(b => b.booking_date && b.booking_date.startsWith(todayKey));
+  else if (tab === 'tomorrow') items = allBookingsCache.filter(b => b.booking_date && b.booking_date.startsWith(tomorrowKey));
   else items = allBookingsCache;
   document.getElementById('schedule-body').innerHTML = renderScheduleItems(items);
 }
@@ -957,7 +957,7 @@ function renderAdminBookings() {
   }
   const rows = all.map((b, idx) => `
     <tr id="admin-row-${idx}">
-      <td>${b.booking_date}<br><span style="color:var(--muted);font-size:.75rem;">${b.slot_label || b.slot}</span></td>
+      <td>${b.booking_date.split('T')[0]}<br><span style="color:var(--muted);font-size:.75rem;">${b.slot_label || b.slot}</span></td>
       <td><div style="font-weight:600">${b.name}</div><div style="font-size:.75rem;color:var(--muted)">${b.band || '—'}</div></td>
       <td>${b.purpose || '—'}</td>
       <td>${b.type==='priority'?'<span class="badge badge-priority">Priority</span>':'<span class="badge badge-confirmed">Regular</span>'}</td>
